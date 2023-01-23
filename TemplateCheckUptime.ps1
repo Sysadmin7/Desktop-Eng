@@ -31,7 +31,7 @@ function get-uptime {
     } 
     } 
     get-uptime
-   $multiplemachines =@() 
+   $multiplemachines =@()  
    $allserver =Get-Content -Path "\\yourdomain\PCScripts\computers.txt" #Retrieve machine names to check uptime from this list.
    foreach($oneserver in $allserver)
    { 
