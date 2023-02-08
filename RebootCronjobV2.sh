@@ -1,5 +1,5 @@
 #Not for IGEL Implementation without testing.
-#Script checks that the Citrix process is NOT running. Will reboot the machine if IDLE for 30 days.
+#Script checks that the Citrix process is NOT running. Will reboot the machine IF idle for 30 days.
 #For questions, Brandon btoddr22@outlook.com
 #!/bin/bash
 REBOOT_HOURS=720
