@@ -1,5 +1,6 @@
 #!/bin/bash
 #IGEL Kiosk Reboot Script
+#Brandon - btoddr22@outlook.com
 name=IGEL_KioskReboot_Script
 ver="0.3"
 REBOOT_HOURS=720
