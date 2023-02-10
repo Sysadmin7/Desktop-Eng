@@ -13,3 +13,5 @@ if ! /usr/bin/pgrep -f wfica > /dev/null; then #Check that Citrix Workspace is N
         /sbin/get_rmsettings
     fi
 fi 
+
+#if ! /usr/bin/pgrep -f wfica > /dev/null; then echo "Found wfica"; else "Did not find wfica"; fi
