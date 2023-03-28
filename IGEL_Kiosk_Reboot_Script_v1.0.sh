@@ -9,7 +9,7 @@ REBOOT_HOURS=720 #Check if machine has been powered on for more than 30 days
 MAXIMUM_DELAY_HOURS=1
 MAXIMUM_SLEEP_SECONDS=$(($MAXIMUM_DELAY_HOURS * 3600))
 UPTIME=`/usr/bin/printf %.0f $(/usr/bin/awk '{print $0/3600;}' /proc/uptime)`
-SLEEP_TIME=$((1 + RANDOM % $MAXIMUM_SLEEP_SECONDS)) #Randomization to prevent unhealthy loading on UMS.
+SLEEP_TIME=$((1 + $RANDOM % $MAXIMUM_SLEEP_SECONDS)) #Randomization to prevent unhealthy loading on UMS.
 USERIDLE="$(DISPLAY=:0 /usr/bin/xprintidle)"
 #### DEBUGGING
 if [ "$DEBUG" = true ]; then
