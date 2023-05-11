@@ -3,6 +3,7 @@
 # Use the nmcli connection show command to display a list of network connections.
 # Use grep and awk to find the UUID of the network configuration that matches the specified name.
 # nmcli is intended for use with IGEL OS, NOT tested, NOT implemented
+# Brandon Todd - btoddr22@outlook.com
 
 # Set the name of the network you want to remove
 network_name="My Network"
