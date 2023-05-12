@@ -1,18 +1,22 @@
 #!/bin/bash
 
-# Script is intended for use with IGEL OS.
-# Brandon Todd - btoddr22@outlook.com
+# Must be run as root. It sets the ESSID and nickname of the wireless interface to a string that is unlikely to be used as an actual network name.
+# effectively preventing the device from connecting to the "KaleidaWiFi" network.
+# Script is not fully funtional. Still in development and testing.
 
-# Set the name of the network you want to remove
-network_name="NetworkNameHere"
+# Set the SSID of the network you want to block
+ssid="KaleidaWiFi"
 
-# Get the UUID of the network configuration, if it exists
-uuid=$(nmcli connection show | grep "${network_name}" | awk '{print $2}')
+# Get the interface name of the wireless device
+interface=$(iw dev | awk '$1=="Interface"{print $2}')
 
-# If a UUID was found, delete the network configuration
-if [[ -n "${uuid}" ]]; then
-  nmcli connection delete "${uuid}"
-  echo "Deleted network configuration for ${network_name}."
-else
-  echo "No network configuration found for ${network_name}."
+# Check if the wireless device is connected to the network to be blocked
+if iw dev "${interface}" link | grep -q "${ssid}"; then
+  # Disconnect from the network
+  nmcli device disconnect "${interface}"
 fi
+
+# Block connections to the network
+iw dev "${interface}" set power_save off
+iwconfig "${interface}" essid "${ssid}" nick "${ssid}" mode managed power off
+echo "Blocked connections to ${ssid}."
