@@ -1,15 +1,18 @@
 #!/bin/bash
-# Set the network_name variable to the name of the wireless network you want to remove.
-# Use the nmcli connection show command to display a list of network connections.
-# Use grep and awk to find the UUID of the network configuration that matches the specified name.
-# nmcli is intended for use with IGEL OS, NOT tested, NOT implemented
+
+# Script is intended for use with IGEL OS.
 # Brandon Todd - btoddr22@outlook.com
 
 # Set the name of the network you want to remove
-network_name="My Network"
+network_name="NetworkNameHere"
 
-# Get the UUID of the network configuration
+# Get the UUID of the network configuration, if it exists
 uuid=$(nmcli connection show | grep "${network_name}" | awk '{print $2}')
 
-# Remove the network configuration
-nmcli connection delete "${uuid}"
+# If a UUID was found, delete the network configuration
+if [[ -n "${uuid}" ]]; then
+  nmcli connection delete "${uuid}"
+  echo "Deleted network configuration for ${network_name}."
+else
+  echo "No network configuration found for ${network_name}."
+fi
