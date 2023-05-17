@@ -1,5 +1,6 @@
 #!bin/bash
-# Read setup.ini from IGEL device and remove saved configured interface settings for KaleidaWifi
+# Read setup.ini from IGEL device and remove saved configured interface settings for KaleidaWifi.
+# WARNING: Script WILL reboot endpoint and force connection from UMS wifi profile.
 # Brandon Todd - btoddr22@outlook.com
 
 if grep -i "network_name=<KaleidaWiFi>" /wfs/setup.ini; then
