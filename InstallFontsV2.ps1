@@ -1,10 +1,10 @@
 # Install fonts from a remote share using elevated permissions.
 # Script can be run locally or deployed via GPO or SCCM.
 # Fonts will be available in C:\Windows\Fonts after reboot.
-# Brandon Todd - brtodd1@kaleidahealth.org
+# Brandon Todd - lotusvictim@gmail.com
 
 # Define the remote share path where fonts exist.
-$remoteSharePath = "\\bghcsa01\install\Fonts\GLIN"
+$remoteSharePath = "\\path\to\your\fonts"
 
 # Get a list of font files in the remote share
 $fontFiles = Get-ChildItem -Path $remoteSharePath -Filter "*.ttf" -File
