@@ -1,4 +1,4 @@
-# NukeIT v0.02 - Disck Space Cleanup
+# NukeIT v0.02 - Disk Space Cleanup
 # This script is designed for system maintenance and cleanup on Windows machines.
 # It includes clearing the Configuration Manager cache, removing old user profiles, and running various cleanup operations to free up disk space.
 # Please refer to the corrosponding document detailing how the script works and definition of functions.
