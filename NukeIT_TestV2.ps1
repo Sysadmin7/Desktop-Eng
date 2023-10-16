@@ -222,4 +222,6 @@ foreach ($Computer in $ComputerName) {
     }
 }
 
+Write-Output "Script completed successfully."
+
 Stop-Transcript
