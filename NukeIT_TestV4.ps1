@@ -1,4 +1,4 @@
-# NukeIT v0.04 - Disk Space Cleanup
+# NukeIT v0.03 - Disk Space Cleanup
 # This script is designed for system maintenance and cleanup on Windows machines.
 # It includes clearing the Configuration Manager cache, removing old user profiles, and running various cleanup operations to free up disk space.
 # Please refer to the corrosponding document detailing how the script works and definition of functions.
@@ -19,12 +19,12 @@ param (
 
 $AppName = "NukeIT"
 
-# Define the remote share path and log file name
+# ---------------- LOGGING: Define the remote share path and log file name ---------------- 
 $RemoteLogPath = "\\bghcsa01\klogin$\LogFiles\NukeIT"
 $LogName = "$($env:COMPUTERNAME).log"
 $Log = Join-Path $RemoteLogPath $LogName
 
-# Function to perform a longer more thorough disk clean
+# ----------------- LONGER disk clean (Clean-System-Full) ---------------- 
 function Clean-System-Full {
    # Configure Disk Cleanup (Set Reg flags for removal of corresponding directories. This is a more streamlined method.)
     $CleanMgrKey = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches"
@@ -74,7 +74,6 @@ function Clean-System-Full {
         Invoke-Expression "Dism.exe /online /Cleanup-Image /StartComponentCleanup /ResetBase"
     }
 
-    
     # Run Disk Cleanup
     Write-Output "Starting Cleanmgr with a full set of checkmarks (might take a while)..."
    $process = Start-Process -FilePath "$env:systemroot\system32\cleanmgr.exe" -ArgumentList "/sagerun:1" -Wait -PassThru
@@ -82,8 +81,7 @@ function Clean-System-Full {
 
 }
 
-
-# Function to perform cleanup
+# ---------------- STANDARD Disk Cleanup (Clean-System) ---------------- 
 function Clean-System {
     param (
         [int]$ProfileAge,
@@ -116,7 +114,6 @@ function Clean-System {
         }
     }
 
- 
     Write-Output "Starting User Profile Cleanup..."
     Write-Output "Checking for user profiles that are older than $ProfileAge days..."
     Get-WmiObject -Class Win32_UserProfile | Where-Object { -not $_.Special } | ForEach-Object {
@@ -161,8 +158,6 @@ function Clean-System {
     Write-Output "Starting Windows Temp folder Cleanup..."
     Remove-Item -Path "$env:SystemRoot\TEMP\*" -Recurse -Force -ErrorAction SilentlyContinue
 
-  
-
     # Clean Additional Directories
     $AdditionalCleanupDirectories = @(
         'C:\Windows\CCM\Logs',
@@ -196,17 +191,31 @@ $process = Start-Process -FilePath "$env:systemroot\system32\cmd.exe" -ArgumentL
 powercfg -h off
 Write-Host "Hibernation Disabled"
 
-Clean-System-Full
+
+  # Calculate disk space after cleanup (Messy method but works for now.)
+    $FreespaceAfter = (Get-WmiObject Win32_LogicalDisk -Filter "DeviceID='C:'" | Select-Object -ExpandProperty FreeSpace)
+
+    Write-Output "Disk C:\ now has $([math]::Round($FreespaceAfter / 1GB, 2)) GB available with standard cleanup."
+    $freedSpace = [math]::Round(($FreespaceBefore - $FreespaceAfter) / 1GB, 2)
+    Write-Output "$freedSpace GB has been Nuked on C:\."
+
+
+    Clean-System-Full
 
     # Calculate disk space after cleanup (Messy method but works for now.)
     $FreespaceAfter = (Get-WmiObject Win32_LogicalDisk -Filter "DeviceID='C:'" | Select-Object -ExpandProperty FreeSpace)
 
-    Write-Output "Disk C:\ now has $([math]::Round($FreespaceAfter / 1GB, 2)) GB available."
+    Write-Output "Disk C:\ now has $([math]::Round($FreespaceAfter / 1GB, 2)) GB available after full cleanup."
     $freedSpace = [math]::Round(($FreespaceBefore - $FreespaceAfter) / 1GB, 2)
     Write-Output "$freedSpace GB has been Nuked on C:\."
+
 } 
 
-# ----------------------------END OF CLEAN SYSTEM---------------------------- #
+# ------------------- END of STANDARD Disk Cleanup (Clean-System---------------------------- #
+
+
+
+# ----------------------------- Main Routine -------------------------------- #
 
 # Start transcript logging to the remote share
 Start-Transcript -Path $Log
@@ -252,8 +261,6 @@ foreach ($Computer in $ComputerName) {
         "---- $(Get-Date) - $Computer cleaned in: $($TimeSpan.Hours) hours $($TimeSpan.Minutes) minutes and $($TimeSpan.Seconds) seconds."
     }
 }
-
-
 
 Write-Output "Script completed successfully."
 
