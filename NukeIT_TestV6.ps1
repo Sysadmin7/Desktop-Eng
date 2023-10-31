@@ -23,7 +23,7 @@ param (
 $AppName = "NukeIT - v0.06"
 
 # Define the remote share path and log file name
-$RemoteLogPath = "\\bghcsa01\klogin$\LogFiles\NukeIT"
+$RemoteLogPath = "\\path\to\your\folder"
 $LogName = "$($env:COMPUTERNAME).log"
 $Log = Join-Path $RemoteLogPath $LogName
 
