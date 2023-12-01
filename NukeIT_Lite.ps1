@@ -34,7 +34,7 @@ if (-not $isAdmin) {
 }
 
 # Define the remote share path and log file name
-$RemoteLogPath = "\\bghcsa01\klogin$\LogFiles\NukeIT\NukeIT_Lite" # Revert to parent directory after testing
+$RemoteLogPath = "\\path\to\your\logs" # Revert to parent directory after testing
 $LogName = "$($env:COMPUTERNAME).log"
 $Log = Join-Path $RemoteLogPath $LogName
 
