@@ -1,4 +1,4 @@
-# NukeIT_Lite v0.08 - Disk Space Cleanup with Improved Error Handling
+# NukeIT_Lite v0.09 - Disk Space Cleanup with Improved Error Handling
 # This script is designed for system maintenance and cleanup on Windows machines.
 # It includes clearing the Configuration Manager cache, removing old user profiles, and running various cleanup operations to free up disk space.
 # Please refer to the corresponding document detailing how the script works and definition of functions.
@@ -19,9 +19,7 @@ param (
 )
 
 # Echo script version to the log
-$AppName = "NukeIT_Lite - v0.08"
-$VersionNumber = $AppName -replace '.*v([\d.]+)', '$1'
-Write-Verbose "NukeIT_Lite Version: $VersionNumber"
+$AppName = "NukeIT_Lite - v0.09"
 
 # Detect Elevation:
 $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent()
@@ -34,9 +32,11 @@ if (-not $isAdmin) {
 }
 
 # Define the remote share path and log file name
-$RemoteLogPath = "\\path\to\your\logs" # Revert to parent directory after testing
+$RemoteLogPath = "\\path\to\LogFiles\NukeIT\NukeIT_Lite" # Revert to parent directory after testing
 $LogName = "$($env:COMPUTERNAME).log"
 $Log = Join-Path $RemoteLogPath $LogName
+
+# ---------- CLEANUP FUNCTION START ----------------------------------------------------------------------
 
 # Function to perform cleanup
 function Clean-System {
@@ -146,10 +146,10 @@ function Clean-System {
         'C:\Users\autoimprivata\AppData\Local\Temp',
         'C:\Users\AutoHealthCastVDI',
         'C:\Windows\System32\LogFiles',
-        'C:\Windows\Installer\$PatchCache$',
-        'C:\$Recycle.Bin',
-        'C:\MSOCache'
+        'C:\Windows\Installer\$PatchCache$'
     )
+
+      # 'C:\$Recycle.Bin',
 
     $AdditionalCleanupDirectories | ForEach-Object {
         $directory = $_
@@ -168,13 +168,18 @@ function Clean-System {
         }
     }
 
-    # Clean .dmp files within user profiles
+    # Clean .dmp files within user profiles and other directories. Run delProf2
     Write-Output "Cleaning DMP and TMP Files..."
     try {
         $process = Start-Process -FilePath "$env:systemroot\system32\cmd.exe" -ArgumentList "/c DEL /S /Q C:\Users\*.dmp" -Wait -PassThru
-        $process = Start-Process -FilePath "$env:systemroot\system32\cmd.exe" -ArgumentList "/c DEL /S /Q C:\Users\*.tmp" -Wait -PassThru
+		$process = Start-Process -FilePath "$env:systemroot\system32\cmd.exe" -ArgumentList "/c DEL /S /Q C:\Windows\Logs\CBS*.cab" -Wait -PassThru
+        # $process = Start-Process -FilePath "$env:systemroot\system32\cmd.exe" -ArgumentList "/c DEL /S /Q C:\Users\*.tmp" -Wait -PassThru  # PROBLEM: This removes the logon cache creds from WebEx
         $process = Start-Process -FilePath "$env:systemroot\system32\cmd.exe" -ArgumentList "/c DEL /S /Q C:\ProgramData\*.dmp" -Wait -PassThru
-        $process = Start-Process -FilePath "$env:systemroot\system32\cmd.exe" -ArgumentList "/c DEL /S /Q Z:\Windows\ServiceProfiles\LocalService\AppData\Local\CrashDumps\*.dmp" -Wait -PassThru
+        $process = Start-Process -FilePath "$env:systemroot\system32\cmd.exe" -ArgumentList "/c DEL /S /Q C:\Windows\ServiceProfiles\LocalService\AppData\Local\CrashDumps\*.dmp" -Wait -PassThru
+        $process = Start-Process -FilePath "$env:systemroot\system32\cmd.exe" -ArgumentList '/c RD /S /Q c:\$Recycle.Bin' -Wait -PassThru
+		# $process = Start-Process -FilePath "$env:systemroot\system32\cmd.exe" -ArgumentList "/c \\bghcsa01\install\DiskClean\Delprof2\DelProf2.exe /d:180 /u" -Wait -PassThru # Delete profiled > 180 days
+        cmd.exe /c "\\path\to\DelProf2.exe /d:180 /u"
+
     } catch {
         # Log errors to a separate log file if needed
         # Add-Content -Path "C:\Path\To\Error\Log.txt" -Value ("Error while cleaning DMP and TMP files: $($_.Exception.Message)")
@@ -187,6 +192,36 @@ function Clean-System {
     } catch {
         # Log errors to a separate log file if needed
         # Add-Content -Path "C:\Path\To\Error\Log.txt" -Value ("Error while disabling hibernation: $($_.Exception.Message)")
+    }
+
+
+    
+    # Remove local user files - TEST BLOCK
+    $basePath = "C:\Users"
+
+    # Get a list of user directories
+    $userDirectories = Get-ChildItem $basePath -Directory
+
+    # Loop through each user directory
+    foreach ($userDirectory in $userDirectories) {
+    $tempPath = Join-Path $userDirectory.FullName "AppData\Local\Temp"
+    $webExPath = Join-Path $userDirectory.FullName "AppData\Local\WebEx\wbxcache"
+
+    # Display information about the current user being processed
+    Write-Output "Processing user: $($userDirectory.Name)"
+
+    # Remove contents of the Temp directory
+    Write-Output "Removing contents of $tempPath"
+    Remove-Item -Path $tempPath -Force -Recurse -ErrorAction SilentlyContinue -Verbose
+
+    # Remove contents of the WebEx directory
+    Write-Output "Removing contents of $webExPath"
+    Remove-Item -Path $webExPath -Force -Recurse -ErrorAction SilentlyContinue -Verbose
+
+    # Empty the Recycle Bin for the user
+   # Write-Output "Emptying Recycle Bin for $userDirectory"
+    # Clear-RecycleBin $ -Force -ErrorAction SilentlyContinue -Verbose
+
     }
 
     # Calculate disk space after cleanup
@@ -204,61 +239,58 @@ function Clean-System {
 }
 
 
+# ---------- CLEANUP FUNCTION END ----------------------------------------------------------------------
 
-# Remove local user files - TEST BLOCK
-$basePath = "C:\Users"
-
-# Get a list of user directories
-$userDirectories = Get-ChildItem $basePath -Directory
-
-# Loop through each user directory
-foreach ($userDirectory in $userDirectories) {
-    $tempPath = Join-Path $userDirectory.FullName "AppData\Local\Temp"
-    $webExPath = Join-Path $userDirectory.FullName "AppData\Local\WebEx\wbxcache"
-
-    # Display information about the current user being processed
-    Write-Output "Processing user: $($userDirectory.Name)"
-
-    # Remove contents of the Temp directory
-    Write-Output "Removing contents of $tempPath"
-    Remove-Item -Path $tempPath -Force -Recurse -ErrorAction SilentlyContinue -Verbose
-
-    # Remove contents of the WebEx directory
-    Write-Output "Removing contents of $webExPath"
-    Remove-Item -Path $webExPath -Force -Recurse -ErrorAction SilentlyContinue -Verbose
-
-    # Empty the Recycle Bin for the user
-    Write-Output "Emptying Recycle Bin for $userDirectory"
-    Clear-RecycleBin -Force -ErrorAction SilentlyContinue -Verbose
-
-}
-
-
-
-# Start transcript logging to the remote share
-Start-Transcript -Path $Log
-
-if (-not $ComputerName) {
-    Write-Host "No target(s) specified, defaulting to the local machine."
-    $ComputerName = $env:ComputerName
-}
-
-# Iterate through Computer Names
-foreach ($Computer in $ComputerName) {
-    try {
-        # Measure running time (This needs improvement and optimization)
-        $Start = Get-Date
-        Write-Output "---- $(Get-Date) - Starting cleanup on $Computer..."
-        Clean-System -ProfileAge $ProfileAge -CleanCCMCache:$CleanCCMCache
-    } catch {
-        # Log errors to a separate log file if needed
-        # Add-Content -Path "C:\Path\To\Error\Log.txt" -Value ("Unable to clean $Computer because $($_.Exception.Message)")
-    } Finally {
-        $End = Get-Date
-        $TimeSpan = New-TimeSpan -Start $Start -End $End
-        "---- $(Get-Date) - $Computer cleaned in: $($TimeSpan.Hours) hours $($TimeSpan.Minutes) minutes and $($TimeSpan.Seconds) seconds."
+# ---------- CALCULATE LOW DISK SPACE ----------------------------------------------------------------------
+Function LowDiskSpace {
+    $drive = Get-PSDrive -PSProvider FileSystem -Name C
+    $totalSpaceGB = [math]::Round(($drive.Used + $drive.Free) / 1GB, 2)
+    $freeSpaceGB = [math]::Round($drive.Free / 1GB, 2)  # Convert free space to gigabytes and round to 2 decimal places
+    $LowDisk = $False
+   
+    If ($totalSpaceGB -le 60) {      # If HDD <= 40GB, Remediate if less than or equal to 3GB
+     If ($freeSpaceGB -le 3) {
+        $LowDisk = $True
     }
+   } else {                          # If HDD >= 40GB, Remediate if less than or equal to 10GB
+    If ($freeSpaceGB -le 10) {
+              $LowDisk = $True
+   }
+  }
+    return $LowDisk 
 }
+
+
+
+# ---------- START OF PROGRAM ----------------------------------------------------------------------
+
+If (LowDiskSpace) {
+    # Start transcript logging to the remote share
+    Start-Transcript -Path $Log
+    Write-Host $AppName 
+
+    if (-not $ComputerName) {
+     Write-Host "No target(s) specified, defaulting to the local machine."
+     $ComputerName = $env:ComputerName
+    }
+
+    # Iterate through Computer Names
+    foreach ($Computer in $ComputerName) {
+     try {
+         # Measure running time (This needs improvement and optimization)
+         $Start = Get-Date
+         Write-Output "---- $(Get-Date) - Starting cleanup on $Computer..."
+         Clean-System -ProfileAge $ProfileAge -CleanCCMCache:$CleanCCMCache
+     } catch {
+         # Log errors to a separate log file if needed
+         # Add-Content -Path "C:\Path\To\Error\Log.txt" -Value ("Unable to clean $Computer because $($_.Exception.Message)")
+     } Finally {
+         $End = Get-Date
+            $TimeSpan = New-TimeSpan -Start $Start -End $End
+         "---- $(Get-Date) - $Computer cleaned in: $($TimeSpan.Hours) hours $($TimeSpan.Minutes) minutes and $($TimeSpan.Seconds) seconds."
+     }
+    }
 
 # Stop the transcript logging
 Stop-Transcript
+}
